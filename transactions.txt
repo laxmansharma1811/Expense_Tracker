@@ -1,0 +1,2 @@
+12000.0,food
+200.0,transport
