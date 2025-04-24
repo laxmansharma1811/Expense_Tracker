@@ -169,6 +169,53 @@ def take_loan(required_amount):
         print("Input interrupted. Loan cancelled.")
         return False
 
+def repay_loan():
+    if not loans:
+        print("No loans to repay.")
+        return
+    print("\nYour Loans:")
+    print("ID | Amount | Interest Rate")
+    print("---------------------------")
+    for i, loan in enumerate(loans, 1):
+        print(f"{i}. {loan['loan_id'][:8]}... | ${loan['amount']:.2f} | {loan['interest_rate']*100:.1f}%")
+    try:
+        choice = input("Enter loan number to repay (or 'cancel' to return): ").strip()
+        if choice.lower() == 'cancel':
+            return
+        loan_index = int(choice) - 1
+        if loan_index < 0 or loan_index >= len(loans):
+            print("Invalid loan number.")
+            return
+        selected_loan = loans[loan_index]
+        print(f"Selected Loan: ${selected_loan['amount']:.2f} at {selected_loan['interest_rate']*100:.1f}%")
+        repayment_amount = float(input("Enter repayment amount: "))
+        if repayment_amount <= 0:
+            print("Repayment amount must be positive.")
+            return
+        if not check_budget(repayment_amount):
+            print("Insufficient budget for repayment.")
+            return
+        # Add repayment as a transaction
+        transaction = {
+            "amount": repayment_amount,
+            "category": "loan_repayment",
+            "user": current_user
+        }
+        transactions.append(transaction)
+        # Update loan amount
+        selected_loan['amount'] -= repayment_amount
+        if selected_loan['amount'] <= 0:
+            loans.pop(loan_index)
+            print("Loan fully repaid and removed!")
+        else:
+            print(f"Repaid ${repayment_amount:.2f}. Remaining loan amount: ${selected_loan['amount']:.2f}")
+        save_loans()
+        save_transactions()
+    except ValueError:
+        print("Invalid input. Please enter a valid number.")
+    except EOFError:
+        print("Input interrupted. Returning to menu.")
+
 def add_transaction():
     try:
         amount = float(input("Enter amount: "))
@@ -278,9 +325,10 @@ def main():
                         print("2. View History")
                         print("3. View Summary by Category")
                         print("4. Adjust Budget")
-                        print("5. Logout")
+                        print("5. Repay Loan")
+                        print("6. Logout")
                         try:
-                            menu_choice = input("Enter choice (1-5): ")
+                            menu_choice = input("Enter choice (1-6): ")
                             if menu_choice == "1":
                                 add_transaction()
                             elif menu_choice == "2":
@@ -290,10 +338,12 @@ def main():
                             elif menu_choice == "4":
                                 adjust_budget()
                             elif menu_choice == "5":
+                                repay_loan()
+                            elif menu_choice == "6":
                                 print("Logged out.")
                                 break
                             else:
-                                print("Invalid choice. Please enter 1, 2, 3, 4, or 5.")
+                                print("Invalid choice. Please enter 1, 2, 3, 4, 5, or 6.")
                         except EOFError:
                             print("Input interrupted. Returning to login.")
                             break
